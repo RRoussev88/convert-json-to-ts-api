@@ -1,23 +1,40 @@
-import { Router, Request, Response, NextFunction } from 'express';
-import JsonToTS from 'json-to-ts';
+import { Router, Request, Response } from 'express';
+import { isObject } from 'json-to-ts/build/src/util';
+
+import { convert, POST_VALID_JSON } from './utils';
 
 export const router: Router = Router();
 
 router
   .route('/interface')
-  .get((req: Request, res: Response, next: NextFunction) => {
+  .get((_, res: Response) =>
     res.end(
       'Use the POST version of this endpoint to convert JSON payload to TypeScript interface definitions.',
-    );
-  })
-  .post((req: Request, res: Response, next: NextFunction) => {
-    if (req.body) {
-      const interfaces = JsonToTS(req.body, { rootName: req.query.rootName.toString() }).map((inter) => {
-        const firstBrace = inter.indexOf('{');
-        return inter.slice(0, firstBrace) + inter.slice(firstBrace).replace(/(\r\n|\n|\r|\s)/gm, '');
-      });
-      res.json({ interfaces });
+    ),
+  )
+  .post(convert, (req: Request, res: Response) => {
+    if (req.body && isObject(req.body)) {
+      res.json(req.body)
     } else {
-      res.end('POST some valid JSON');
+      res.end(POST_VALID_JSON);
+    }
+  });
+
+router
+  .route('/type')
+  .get((_: Request, res: Response) =>
+    res.end('Use the POST version of this endpoint to convert JSON payload to TypeScript type definitions.'),
+  )
+  .post(convert, (req: Request, res: Response) => {
+    const { interfaces } = req.body;
+    if (interfaces && Array.isArray(interfaces)) {
+      const types = interfaces.map((inter) => {
+        const firstBrace = inter.indexOf('{');
+        return inter.slice(0, firstBrace - 1).replace('interface', 'type') + ' = ' + inter.slice(firstBrace);
+      });
+
+      res.json({ types });
+    } else {
+      res.end(POST_VALID_JSON);
     }
   });
