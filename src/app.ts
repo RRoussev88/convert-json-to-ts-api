@@ -1,9 +1,13 @@
-import express, { Application, Express, Request, Response, NextFunction } from 'express';
+import cors from 'cors';
+import morgan from 'morgan';
+import express, { Application, Request, Response, NextFunction } from 'express';
 
 import { router } from './router';
 
 const app: Application = express();
 const port = 3000;
+
+app.use(cors(), express.json(), express.urlencoded({ extended: true }), morgan('combined'));
 
 app.use(router);
 
