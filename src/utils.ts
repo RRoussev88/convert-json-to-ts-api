@@ -10,4 +10,7 @@ export const convert: RequestHandler = (req, _, next) => {
   next();
 };
 
+export const ENDPOINT_DESCRIPTION =
+  'Use the POST version of this endpoint to convert JSON payload to TypeScript';
+
 export const POST_VALID_JSON = 'POST some valid JSON';
