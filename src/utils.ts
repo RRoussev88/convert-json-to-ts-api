@@ -14,3 +14,24 @@ export const ENDPOINT_DESCRIPTION =
   'Use the POST version of this endpoint to convert JSON payload to TypeScript';
 
 export const POST_VALID_JSON = 'POST some valid JSON';
+
+export const normalizeInvalidTypeName = (name: string): string => {
+  if (/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(name)) {
+    return name;
+  } else {
+    const noSymbolsName = name.replace(/[^a-zA-Z0-9_$]/g, '_');
+    const hasValidStart = /^[a-zA-Z_$]/.test(noSymbolsName);
+    return hasValidStart ? noSymbolsName : `_${noSymbolsName}`;
+  }
+}
+
+export const uniqueByIncrement = (name: string, index: number, namesArr: string[]): string => {
+  if (!namesArr.length || !index || Array.of(new Set(namesArr)).length === namesArr.length) {
+    return name;
+  }
+  const occurrences = namesArr.slice(0, index).filter(nam => nam === name).length;
+  if (occurrences) {
+    return `${name}_${occurrences + 1}`;
+  }
+  return name;
+}

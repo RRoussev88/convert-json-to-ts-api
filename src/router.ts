@@ -1,8 +1,13 @@
 import { Router, Request, Response } from 'express';
 import { isObject } from 'json-to-ts/build/src/util';
-import { nextTick } from 'process';
 
-import { convert, ENDPOINT_DESCRIPTION, POST_VALID_JSON } from './utils';
+import {
+  convert,
+  ENDPOINT_DESCRIPTION,
+  normalizeInvalidTypeName,
+  POST_VALID_JSON,
+  uniqueByIncrement,
+} from './utils';
 
 export const router: Router = Router();
 
@@ -41,11 +46,17 @@ router
 router
   .route('/enum')
   .get((_: Request, res: Response) => res.end(`${ENDPOINT_DESCRIPTION} enum definition.`))
-  .post((req: Request<{}, {enum: string}, {array: string[]}>, res: Response, next) => {
-    const { array } = req.body;
-    if (array && Array.isArray(array)) {      
-          res.json({ enum: `enum RootName {${array.reduce((acc, curr) => `${acc}${curr.toUpperCase()} = '${curr}', `, '')}}` });
+  .post((req: Request<{}, { enum: string }, string[]>, res: Response) => {
+    const payload = req.body;
+    if (payload && Array.isArray(payload) && payload.every((val) => typeof val === 'string')) {
+      const normalizedPayload = payload.map(normalizeInvalidTypeName);
+      res.json({
+        enum: `enum RootName {${normalizedPayload.reduce(
+          (acc, curr, index, arr) => `${acc}${uniqueByIncrement(curr, index, arr)} = '${payload[index]}', `,
+          '',
+        )}}`,
+      });
     } else {
-      res.status(400).end('POST a JSON object containing an `array` property as string array');
+      res.status(400).end('Invalid Payload. POST an array of strings.');
     }
-  })
+  });
