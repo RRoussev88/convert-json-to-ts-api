@@ -1,8 +1,7 @@
 import { Router, Request, Response } from 'express';
-import { isObject } from 'json-to-ts/build/src/util';
 
 import {
-  convert,
+  convertToTsString,
   ENDPOINT_DESCRIPTION,
   falsyValues,
   normalizeInvalidTypeName,
@@ -15,9 +14,14 @@ export const router: Router = Router();
 router
   .route('/interface')
   .get((_, res: Response) => res.end(`${ENDPOINT_DESCRIPTION} interface definitions.`))
-  .post(convert, (req: Request, res: Response) => {
-    if (req.body && isObject(req.body)) {
-      res.json(req.body);
+  .post((req: Request, res: Response) => {
+    if (req.body) {
+      res.json({
+        interfaces: convertToTsString(req.body, req.query.rootName?.toString()).reduce(
+          (acc, curr, index) => `${acc}${index ? ' ' : ''}${curr}`,
+          '',
+        ),
+      });
     } else {
       res.end(POST_VALID_JSON);
     }
@@ -26,15 +30,18 @@ router
 router
   .route('/type')
   .get((_: Request, res: Response) => res.end(`${ENDPOINT_DESCRIPTION} type definitions.`))
-  .post(convert, (req: Request, res: Response) => {
-    const { interfaces } = req.body;
-    if (interfaces && Array.isArray(interfaces)) {
-      const types = interfaces.map((inter) => {
-        const firstBrace = inter.indexOf('{');
-        return inter.slice(0, firstBrace - 1).replace('interface', 'type') + ' = ' + inter.slice(firstBrace);
+  .post((req: Request, res: Response) => {
+    if (req.body) {
+      res.json({
+        types: convertToTsString(req.body, req.query.rootName?.toString())
+          .map((inter) => {
+            const firstBrace = inter.indexOf('{');
+            return (
+              inter.slice(0, firstBrace - 1).replace('interface', 'type') + ' = ' + inter.slice(firstBrace)
+            );
+          })
+          .reduce((acc, curr, index) => `${acc}${index ? ' ' : ''}${curr}`, ''),
       });
-
-      res.json({ types });
     } else {
       res.end(POST_VALID_JSON);
     }
@@ -42,7 +49,26 @@ router
 
 router
   .route('/function')
-  .get((_: Request, res: Response) => res.end(`${ENDPOINT_DESCRIPTION} function definition.`));
+  .get((_: Request, res: Response) => res.end(`${ENDPOINT_DESCRIPTION} function definition.`))
+  .post((req: Request<{}, { func: string }, { args: any; returnType: any }>, res: Response) => {
+    const { args, returnType } = req.body;
+    let func = '() => void';
+    let auxTypes;
+    if (args) {
+    }
+    if (returnType) {
+      const convertedReturnType = convertToTsString(returnType);
+      if (convertedReturnType.length && convertedReturnType[0].length > 21) {
+        func = func.replace('void', convertedReturnType[0].slice(21));
+      }
+      if (convertedReturnType.length > 1) {
+        auxTypes = convertedReturnType
+          .slice(1)
+          .reduce((acc, curr, index) => `${acc}${index ? ' ' : ''}${curr}`, '');
+      }
+    }
+    res.json({ func, auxTypes });
+  });
 
 router
   .route('/enum')

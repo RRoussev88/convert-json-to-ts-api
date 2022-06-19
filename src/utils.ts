@@ -1,14 +1,10 @@
-import { RequestHandler } from 'express';
 import JsonToTS from 'json-to-ts';
 
-export const convert: RequestHandler = (req, _, next) => {
-  const interfaces = JsonToTS(req.body, { rootName: req.query.rootName?.toString() }).map((inter) => {
+export const convertToTsString = (payload: any, rootName?: string) =>
+  JsonToTS(payload, { rootName: rootName?.toString() }).map((inter) => {
     const firstBrace = inter.indexOf('{');
     return inter.slice(0, firstBrace) + inter.slice(firstBrace).replace(/(\r\n|\n|\r|\s)/gm, '');
   });
-  req.body = { interfaces };
-  next();
-};
 
 export const ENDPOINT_DESCRIPTION =
   'Use the POST version of this endpoint to convert JSON payload to TypeScript';
@@ -23,17 +19,17 @@ export const normalizeInvalidTypeName = (name: string): string => {
     const hasValidStart = /^[a-zA-Z_$]/.test(noSymbolsName);
     return hasValidStart ? noSymbolsName : `_${noSymbolsName}`;
   }
-}
+};
 
 export const uniqueByIncrement = (name: string, index: number, namesArr: string[]): string => {
   if (!namesArr.length || !index || Array.of(new Set(namesArr)).length === namesArr.length) {
     return name;
   }
-  const occurrences = namesArr.slice(0, index).filter(nam => nam === name).length;
+  const occurrences = namesArr.slice(0, index).filter((nam) => nam === name).length;
   if (occurrences) {
     return `${name}_${occurrences + 1}`;
   }
   return name;
-}
+};
 
-export const falsyValues = ['0', 'false', 'f', 'no', 'n']
+export const falsyValues = ['0', 'false', 'f', 'no', 'n'];
