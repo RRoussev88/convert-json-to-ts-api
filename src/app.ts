@@ -11,6 +11,8 @@ app.use(cors(), express.json(), express.urlencoded({ extended: true }), morgan('
 
 app.use(router);
 
+app.use((_, res) => res.status(404).send('Page not Found'));
+
 app.use((error, _, res: Response, __) =>
   res.status(error.statusCode || 500).send(error.message?.toString() ?? 'Internal Server Error'),
 );

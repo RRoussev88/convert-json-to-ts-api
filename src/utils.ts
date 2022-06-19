@@ -35,3 +35,5 @@ export const uniqueByIncrement = (name: string, index: number, namesArr: string[
   }
   return name;
 }
+
+export const falsyValues = ['0', 'false', 'f', 'no', 'n']

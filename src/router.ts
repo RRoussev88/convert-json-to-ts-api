@@ -4,6 +4,7 @@ import { isObject } from 'json-to-ts/build/src/util';
 import {
   convert,
   ENDPOINT_DESCRIPTION,
+  falsyValues,
   normalizeInvalidTypeName,
   POST_VALID_JSON,
   uniqueByIncrement,
@@ -46,17 +47,41 @@ router
 router
   .route('/enum')
   .get((_: Request, res: Response) => res.end(`${ENDPOINT_DESCRIPTION} enum definition.`))
-  .post((req: Request<{}, { enum: string }, string[]>, res: Response) => {
-    const payload = req.body;
-    if (payload && Array.isArray(payload) && payload.every((val) => typeof val === 'string')) {
-      const normalizedPayload = payload.map(normalizeInvalidTypeName);
-      res.json({
-        enum: `enum RootName {${normalizedPayload.reduce(
-          (acc, curr, index, arr) => `${acc}${uniqueByIncrement(curr, index, arr)} = '${payload[index]}', `,
-          '',
-        )}}`,
-      });
-    } else {
-      res.status(400).end('Invalid Payload. POST an array of strings.');
-    }
-  });
+  .post(
+    (
+      req: Request<
+        {},
+        { enum: string },
+        string[],
+        { rootName: string; useNumericValues: string; capitalize: string }
+      >,
+      res: Response,
+    ) => {
+      const payload = req.body;
+      if (payload && Array.isArray(payload) && payload.every((val) => typeof val === 'string')) {
+        const { rootName, useNumericValues, capitalize } = req.query;
+        const normalizedPayload = payload.map((name) =>
+          capitalize && !falsyValues.includes(capitalize)
+            ? normalizeInvalidTypeName(name).toUpperCase()
+            : normalizeInvalidTypeName(name),
+        );
+        const responsePayload = {
+          enum: `enum ${rootName ? normalizeInvalidTypeName(rootName) : 'RootName'} `,
+        };
+        if (useNumericValues && !falsyValues.includes(useNumericValues)) {
+          responsePayload.enum += `{${normalizedPayload.reduce(
+            (acc, curr, index, arr) => `${acc}${uniqueByIncrement(curr, index, arr)}, `,
+            '',
+          )}}`;
+        } else {
+          responsePayload.enum += `{${normalizedPayload.reduce(
+            (acc, curr, index, arr) => `${acc}${uniqueByIncrement(curr, index, arr)} = '${payload[index]}', `,
+            '',
+          )}}`;
+        }
+        res.json(responsePayload);
+      } else {
+        res.status(400).end('Invalid Payload. POST an array of strings.');
+      }
+    },
+  );
