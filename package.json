@@ -2,9 +2,11 @@
   "name": "convert-json-to-ts-api",
   "version": "1.0.0",
   "description": "Convert JSON payload to TypeScript definitions",
-  "main": "index.ts",
+  "main": "app.js",
   "scripts": {
-    "serve": "nodemon",
+    "build": "tsc --build",
+    "dev": "nodemon",
+    "serve": "node src/app",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
